@@ -1,0 +1,35 @@
+---
+- name: Linux production pre-check sample for interview
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+      changed_when: false
+
+    - name: Check root filesystem usage percent
+      ansible.builtin.shell: df / | awk 'NR==2 {print $5}' | sed 's/%//'
+      register: root_usage
+      changed_when: false
+
+    - name: Fail if root filesystem is above threshold
+      ansible.builtin.fail:
+        msg: "Root filesystem usage is {{ root_usage.stdout }}%. Clean disk before patching."
+      when: root_usage.stdout | int > 85
+
+    - name: Check failed systemd services
+      ansible.builtin.command: systemctl --failed
+      register: failed_services
+      failed_when: false
+      changed_when: false
+
+    - name: Print pre-check summary
+      ansible.builtin.debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Uptime: {{ uptime_result.stdout }}"
+          - "Root usage: {{ root_usage.stdout }}%"
+          - "Failed services: {{ failed_services.stdout_lines }}"

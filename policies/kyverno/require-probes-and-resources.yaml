@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes-and-resources
+  annotations:
+    policies.kyverno.io/title: Require Probes and Resources
+    policies.kyverno.io/category: Reliability
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-readiness-liveness-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Containers must define readinessProbe, livenessProbe, resource requests, and limits."
+        pattern:
+          spec:
+            containers:
+              - readinessProbe: "?*"
+                livenessProbe: "?*"
+                resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"

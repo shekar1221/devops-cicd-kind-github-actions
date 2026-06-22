@@ -1,0 +1,43 @@
+---
+- name: Linux patching workflow sample for interview
+  hosts: all
+  become: true
+  serial: 5
+  gather_facts: true
+
+  tasks:
+    - name: Update all packages on Red Hat family
+      ansible.builtin.yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Check if reboot is required
+      ansible.builtin.command: needs-restarting -r
+      register: reboot_required
+      failed_when: false
+      changed_when: reboot_required.rc == 1
+      when: ansible_os_family == "RedHat"
+
+    - name: Reboot if required
+      ansible.builtin.reboot:
+        reboot_timeout: 900
+      when:
+        - ansible_os_family == "RedHat"
+        - reboot_required.rc == 1
+
+    - name: Wait for host after reboot
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Capture kernel version
+      ansible.builtin.command: uname -r
+      register: kernel_version
+      changed_when: false
+
+    - name: Print patching summary
+      ansible.builtin.debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Kernel: {{ kernel_version.stdout }}"
+          - "Batch execution controlled by serial: 5"
