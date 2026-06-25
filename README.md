@@ -1,4 +1,4 @@
-# HSBC DevOps CI/CD Kind GitHub Actions Lab
+#evOps CI/CD Kind GitHub Actions Lab
 
 This project is built for the HSBC-style JD topics:
 
